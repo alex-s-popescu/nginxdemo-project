@@ -10,6 +10,8 @@
 
 # 🌐 nginxdemo-project Summary
 
+This project automates the deployment of a stateless, containerized web application using Terraform on AWS. The application is based on the publicly available Docker image nginxdemos/hello. The infrastructure is designed for high availability, secure networking, optional SSH administration access, and full TLS encryption via AWS ACM.
+
 This project provisions a **highly available**, **secure**, and **fully automated** deployment of a stateless web application (`nginxdemos/hello`) in AWS using **Terraform**. It follows best practices for networking, IAM, DNS, and TLS encryption, with all resources created from code and deployed to the `eu-central-1` region.
 
 ---
@@ -26,6 +28,22 @@ This project provisions a **highly available**, **secure**, and **fully automate
   - NAT Gateway for private instances to reach the Internet
   - Route53 DNS with automatic ACM validation
   - ACM TLS certificate provisioning (DNS-based)
+
+---
+
+## ✨ Features
+
+- Fully automated infrastructure provisioning using Terraform
+- High-availability application deployment across two Availability Zones
+- Application Load Balancer (ALB) with HTTPS (TLS) termination
+- ACM certificate issuance with automatic DNS validation via Route 53
+- Private subnets for EC2 application instances
+- Public subnets for ALB and optional Bastion host
+- Docker-based deployment of a stateless Hello World application
+- Optional SSH access to instances via a locked-down Bastion host
+- Fine-grained security using AWS Security Groups and IAM roles
+- Visual architecture diagram using mingrammer/diagrams
+- Secure SSH setup using Secrets Manager: Bastion host public key is stored securely and fetched by internal EC2s via IAM roles
 
 ---
 
@@ -52,12 +70,32 @@ This project provisions a **highly available**, **secure**, and **fully automate
 
 ---
 
+## 📤 Outputs Explained
+
+- **ALB DNS**: The DNS name of the Application Load Balancer; use this to access the application if DNS is not yet setup.
+- **Bastion public IP**: Public IP address of the Bastion host for SSH access.
+- **Private EC2 IPs**: Private IP addresses of the EC2 instances running the application.
+- **Route53 NS records**: Name server records for the hosted zone; useful for verifying DNS delegation.
+- **Certificate ARN and validation status**: Amazon Resource Name of the ACM TLS certificate and its current validation state.
+
+---
+
 ## 📡 Domain & HTTPS
 
 - **Domain Used**: `nginxdemo.com` (hosted on Route53)
 - **ACM**: Amazon-issued certificate validated via DNS
 - **ALB**: HTTPS listener with certificate termination
 - **Route53**: A-record alias to ALB
+
+### 🔐 How HTTPS via ACM and Route 53 Works
+
+- ACM issues a TLS certificate for the domain (e.g., `nginxdemo.com`).
+- Terraform requests this certificate and retrieves the ARN (Amazon Resource Name).
+- ACM provides DNS validation records (CNAME) that must be added to the Route 53 hosted zone.
+- Terraform automatically creates these DNS validation records in Route 53.
+- Once ACM validates the domain ownership via these DNS records, the certificate becomes active.
+- The ALB is configured with an HTTPS listener using this ACM certificate.
+- Route 53 A-record alias points the domain to the ALB DNS name, enabling secure HTTPS access.
 
 ---
 
@@ -202,6 +240,56 @@ This design ensures **secure, ephemeral, and automated SSH access** across EC2 i
 
 ---
 
+## ⚙️ Prerequisites
+
+- An AWS account with appropriate permissions for EC2, Route 53, ACM, IAM, and Secrets Manager.
+- AWS CLI configured with credentials.
+- Terraform installed locally.
+- Registered domain delegated to Route 53.
+- EC2 key pair created in the target region.
+- Basic knowledge of AWS and Terraform.
+
+---
+
+## 📁 Project Structure
+
+```
+nginxdemo-project/
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── scripts/
+│   ├── bastion_init.sh
+│   └── app_init.sh
+├── modules/
+│   ├── vpc/
+│   ├── ec2/
+│   └── alb/
+└── README.md
+```
+
+---
+
+## ⚙️ Usage Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/nginxdemo-project.git
+   cd nginxdemo-project
+   ```
+2. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+3. Review and customize variables in `variables.tf` if necessary.
+4. Apply the Terraform plan:
+   ```bash
+   terraform apply
+   ```
+5. Confirm the outputs and access the application via the ALB DNS or your domain.
+
+---
+
 ## 📦 Deploy Instructions
 
 1. Set up AWS credentials
@@ -238,6 +326,39 @@ This design ensures **secure, ephemeral, and automated SSH access** across EC2 i
 
 ---
 
-## 👨‍💻 Maintained by
+## 🧼 Cleanup Instructions
+
+To clean up all resources created by this project, run:
+
+```bash
+terraform destroy
+```
+
+This will remove all AWS resources provisioned by Terraform in this project.
+
+---
+
+## ✅ Extra Precautionary Checks After Cleanup
+
+- Verify Route 53 hosted zone records are removed if no longer needed.
+- Check ACM certificates and delete unused ones.
+- Confirm EC2 key pairs and IAM roles no longer in use.
+- Inspect Secrets Manager for any lingering secrets related to this project and delete if necessary.
+
+---
+
+## 🧠 Tip
+
+Always back up your Terraform state files and sensitive credentials before making major changes or destroying infrastructure.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+---
+
+## ✍️ Author
 
 Alex — nginxdemo-project-test, May 2025
